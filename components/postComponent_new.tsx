@@ -1,8 +1,9 @@
 "use client";
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Head from "next/head";
 import Linkify from "react-linkify";
+import { useLikeStore } from "@/stores/likeStore";
 
 // Reading in data from backend
 interface PostComponentProps {
@@ -69,15 +70,6 @@ const PostComponent: React.FC<PostComponentProps> = ({
         currentImageIndex < imageUrl.length - 1 ? currentImageIndex + 1 : 0;
       setCurrentImageIndex(newIndex);
     };
-    
-    const handleLike = () => {
-      if (!liked) {
-        setLikesCount(likesCount + 1);
-      } else {
-        setLikesCount(likesCount - 1);
-      }
-      setLiked(!liked);
-    };
   
     return (
     <>
@@ -129,8 +121,8 @@ const PostComponent: React.FC<PostComponentProps> = ({
                       <div className='text-xs text-gray-500 mt-5'>{created_at}</div>
                   </div>
                   <div className = 'footer'>
-                      <button className = 'icon-button' onClick = {handleLike}>
-                          {liked ? (
+                      <button className='icon-button' onClick={() => toggleLike(post_id)}>
+                          {isLiked[post_id] ? (
                               <svg fill='red' stroke = "red" viewBox='0 0 24 24' className='icon'>
                                   <path d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z' />
                               </svg>
@@ -139,7 +131,7 @@ const PostComponent: React.FC<PostComponentProps> = ({
                                   <path d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z' />
                               </svg>
                           )}
-                          <span className='icon-text'>{likesCount}</span>
+                          <span className='icon-text'>{likes[post_id]}</span>
                       </button>
                   </div>
                 </div>
@@ -202,16 +194,16 @@ const PostComponent: React.FC<PostComponentProps> = ({
           }
         }
 
-            .image-container {
-            display: flex;
-            flex: 1.5;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            position: relative;
-            background: rgba(0, 0, 0, 0.05);
-            }
+        .image-container {
+        display: flex;
+        flex: 1.5;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        position: relative;
+        background: rgba(0, 0, 0, 0.05);
+        }
 
         .image-container:hover .navigation {
           display: flex;
@@ -271,14 +263,14 @@ const PostComponent: React.FC<PostComponentProps> = ({
           border-radius: 5px;
         }
 
-            .text-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            color: black;
-            overflow-y: auto;
-            padding: 0px;
-            }
+        .text-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        color: black;
+        overflow-y: auto;
+        padding: 0px;
+        }
 
         .header {
           height: 75px;
