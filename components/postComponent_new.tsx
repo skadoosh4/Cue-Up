@@ -1,7 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
+import { useState } from "react";
 import Head from "next/head";
-import Linkify from 'react-linkify';
+import Linkify from "react-linkify";
 
 // Reading in data from backend
 interface PostComponentProps {
@@ -12,59 +13,72 @@ interface PostComponentProps {
     like_count: number;
     created_at: string;
     user_id: number;
-}
-
-// Making the link in post clickable
-const linkDecorator = (href: string, text: string, key: number): React.ReactNode => {
-    if (!isValidUrl(href)) {
-        return <span key={key}>{text}</span>;  // Just return text if URL is invalid
-    }
-    return (
-        <a href={href} key={key} target="_blank" rel="noopener noreferrer" style={{ color: 'blue', textDecoration: 'underline' }}>
-            {text}
-        </a>
-    );
-};
-
-  // Simple URL validation function
-  function isValidUrl(string: string): boolean {
-    try {
-      new URL(string);
-    } catch (_) {
-      return false;  // Malformed URL
-    }
-    // Add more sophisticated checks like domain whitelist, etc.
-    return true;
   }
 
-  const PostComponent: React.FC<PostComponentProps> = ({
-    post_id,
-    title,
-    description,
-    imageUrl,
-    like_count,
-    created_at,
-    user_id,
-  }) => {
-    const [liked, setLiked] = useState(false);
-    const [likesCount, setLikesCount] = useState(like_count);
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  // making the link in post clickable
+  const linkDecorator = (href: string, text: string, key: number): React.ReactNode => {
+    // Validate the URL
+    if (!isValidUrl(href)) {
+      return <span key={key}>{text}</span>;  // Just return text if URL is invalid
+    }
+  
+    return (
+      <a href={href} key={key} target="_blank" rel="noopener noreferrer" style={{ color: 'blue', textDecoration: 'underline' }}>
+        {text}
+      </a>
+    );
+  };
 
+// Simple URL validation function
+function isValidUrl(string: string): boolean {
+  try {
+    new URL(string);
+  } catch (_) {
+    return false; // Malformed URL
+  }
+  // Add more sophisticated checks like domain whitelist, etc.
+  return true;
+}
+
+const PostComponent: React.FC<PostComponentProps> = ({
+  post_id,
+  title,
+  description,
+  imageUrl,
+  like_count,
+  created_at,
+  user_id,
+}) => {
+  const { likes, isLiked, toggleLike, initializeLikes } = useLikeStore();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  console.log(like_count);
+
+  useEffect(() => {
+    initializeLikes(post_id, like_count);
+  }, [post_id, like_count, initializeLikes]);
+
+    const handlePrevious = () => {
+      const newIndex =
+        currentImageIndex > 0 ? currentImageIndex - 1 : imageUrl.length - 1;
+      setCurrentImageIndex(newIndex);
+    };
+  
+    const handleNext = () => {
+      const newIndex =
+        currentImageIndex < imageUrl.length - 1 ? currentImageIndex + 1 : 0;
+      setCurrentImageIndex(newIndex);
+    };
+    
     const handleLike = () => {
+      if (!liked) {
+        setLikesCount(likesCount + 1);
+      } else {
+        setLikesCount(likesCount - 1);
+      }
       setLiked(!liked);
-      setLikesCount(liked ? likesCount - 1 : likesCount + 1);
     };
-
-    const handleNextImage = () => {
-      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % imageUrl.length);
-    };
-
-    const handlePrevImage = () => {
-      setCurrentImageIndex((prevIndex) =>
-        prevIndex === 0 ? imageUrl.length - 1 : prevIndex - 1
-      );
-    };
-
+  
     return (
     <>
         <Head>
@@ -85,8 +99,8 @@ const linkDecorator = (href: string, text: string, key: number): React.ReactNode
                     )}
                     {imageUrl.length > 1 && (
                         <div className='navigation'>
-                            <button className='nav-button' onClick={handlePrevImage} aria-label='Previous Image'>&lt;</button>
-                            <button className='nav-button' onClick={handleNextImage} aria-label='Next Image'>&gt;</button>
+                            <button className='nav-button' onClick={handlePrevious} aria-label='Previous Image'>&lt;</button>
+                            <button className='nav-button' onClick={handleNext} aria-label='Next Image'>&gt;</button>
                         </div>
                     )}
                     <span className='absolute top-4 right-4 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs'>
@@ -150,41 +164,43 @@ const linkDecorator = (href: string, text: string, key: number): React.ReactNode
             }
       `}</style>
 
-        <style jsx>{`
-            .post-container {
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(4px);
-            overflow: hidden;            
-            }
+      <style jsx>{`
+        .post-container {
+          position: absolute;
+          top: 0;
+          right: 0;
+          bottom: 0;
+          left: 0;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background-color: rgba(0, 0, 0, 0.1);
+          backdrop-filter: blur(4px);
+          overflow: hidden;
+        }
 
-            .card {
-            display: grid;
-            background: white;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            width: 100%; /* Default full width */
-            height: 100vh; /* Default full viewport height */
-            grid-template-columns: 1fr; /* Default single column */
-            position: relative;
-            overflow-y: auto;
-            }
+        .card {
+          display: grid;
+          background: white;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          overflow: hidden;
+          width: 100%; /* Default full width */
+          height: 100vh; /* Default full viewport height */
+          grid-template-columns: 1fr; /* Default single column */
+          position: relative;
+          overflow-y: auto;
+        }
 
-           @media (min-width: 768px) { /* Adjusts when the screen is wider than 768px */
-            .card {
-                width: 62%;
-                height: 88%;
-                grid-template-columns: 60% 40%;
-                margin: auto;
-                align-self: center;
-            }}
+        @media (min-width: 768px) {
+          /* Adjusts when the screen is wider than 768px */
+          .card {
+            width: 62%;
+            height: 88%;
+            grid-template-columns: 60% 40%;
+            margin: auto;
+            align-self: center;
+          }
+        }
 
             .image-container {
             display: flex;
@@ -195,21 +211,20 @@ const linkDecorator = (href: string, text: string, key: number): React.ReactNode
             overflow: hidden;
             position: relative;
             background: rgba(0, 0, 0, 0.05);
-            height: 100%; /* Ensure it takes full height */
             }
 
-            .image-container:hover .navigation {
-            display: flex;
-            }
+        .image-container:hover .navigation {
+          display: flex;
+        }
 
-            img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            }
+        img {
+          max-width: 100%;
+          max-height: 100%;
+          object-fit: contain;
+        }
 
-            @media (min-width: 768px) {
-            .image-container {
+        @media (min-width: 768px) {
+          .image-container {
             display: flex;
             flex: 1.5;
             flex-direction: column;
@@ -218,42 +233,43 @@ const linkDecorator = (href: string, text: string, key: number): React.ReactNode
             overflow: hidden;
             position: relative;
             background: rgba(0, 0, 0, 0.05);
-            }}
+          }
+        }
 
-            .navigation {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 10px;
-            right: 10px;
-            justify-content: space-between;
-            align-items: center;
-            transform: translateY(-50%);
-            }
+        .navigation {
+          display: none;
+          position: absolute;
+          top: 50%;
+          left: 10px;
+          right: 10px;
+          justify-content: space-between;
+          align-items: center;
+          transform: translateY(-50%);
+        }
 
-            .nav-button {
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            background: rgba(0, 0, 0, 0.55);
-            color: white;
-            font-size: 15px;
-            font-weight: 300;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            }
+        .nav-button {
+          width: 25px;
+          height: 25px;
+          border-radius: 50%;
+          background: rgba(0, 0, 0, 0.55);
+          color: white;
+          font-size: 15px;
+          font-weight: 300;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          cursor: pointer;
+        }
 
-            .image-counter {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.5);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            }
+        .image-counter {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: rgba(0, 0, 0, 0.5);
+          color: white;
+          padding: 5px 10px;
+          border-radius: 5px;
+        }
 
             .text-container {
             flex: 1;
@@ -262,88 +278,89 @@ const linkDecorator = (href: string, text: string, key: number): React.ReactNode
             color: black;
             overflow-y: auto;
             padding: 0px;
-            height: 100%; /* Ensure it takes full height */
             }
 
-            .header{
-            height: 75px;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            box-shadow: 0 2px 2px -2px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            }
+        .header {
+          height: 75px;
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+          box-shadow: 0 2px 2px -2px rgba(0, 0, 0, 0.1);
+          width: 100%;
+        }
 
-            @media (max-width: 768px) {
-            .header {
-                position: fixed; /* Fixed at the top */
-                top: 0; /* Align to the top */
-                left: 0; /* Stretch across the top */
-                background: white; /* White background */
-            }
+        @media (max-width: 768px) {
+          .header {
+            position: fixed; /* Fixed at the top */
+            top: 0; /* Align to the top */
+            left: 0; /* Stretch across the top */
+            background: white; /* White background */
+          }
 
-            .post-container {
-                padding-top: 75px; /* Space for the header */
-            }}
+          .post-container {
+            padding-top: 75px; /* Space for the header */
+          }
+        }
 
-            .profile-block {
-            display: flex;
-            align-items: center;
-            margin-left: 30px;
-            }
+        .profile-block {
+          display: flex;
+          align-items: center;
+          margin-left: 30px;
+        }
 
-            .content{
-            flex: 1;
-            width: auto;
-            padding-right: 20px;
-            padding-left: 20px;
-            overflow-y: auto;
-            overflow-x: hidden;
-            word-wrap: break-word;
-            white-space: normal;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-            &::-webkit-scrollbar {
-                display: none;
-            }}
+        .content {
+          flex: 1;
+          width: auto;
+          padding-right: 20px;
+          padding-left: 20px;
+          overflow-y: auto;
+          overflow-x: hidden;
+          word-wrap: break-word;
+          white-space: normal;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          &::-webkit-scrollbar {
+            display: none;
+          }
+        }
 
-            .preformatted-text {
-            white-space: pre-wrap; /* respects both spaces and line breaks */
-            font-size: 15px;
-            }
-            
-            .footer {
-            display: flex;
-            justify-content: flex-end;
-            width: 100%;
-            height: 65px;
-            box-shadow: 0 -2px 2px -2px rgba(0, 0, 0, 0.3);
-            }
+        .preformatted-text {
+          white-space: pre-wrap; /* respects both spaces and line breaks */
+          font-size: 15px;
+        }
 
-            .icon-button {
-            display: flex;
-            align-items: center;
-            padding: 5px; /* Padding on all sides */
-            padding-right: 30px; /* Additional right padding */
-            }
+        .footer {
+          display: flex;
+          justify-content: flex-end;
+          width: 100%;
+          height: 65px;
+          box-shadow: 0 -2px 2px -2px rgba(0, 0, 0, 0.3);
+        }
 
-            .icon {
-            width: 23px;
-            height: 23px;
-            margin-right: 8px; /* Space between icon and text */
-            stroke-width: 1.25; /* Ensure stroke width is consistent */
-            flex-shrink: 0; /* Prevents icon from shrinking */
-            transition: fill 0.2s; /* Smooth fill transition */
-            }
+        .icon-button {
+          display: flex;
+          align-items: center;
+          padding: 5px; /* Padding on all sides */
+          padding-right: 30px; /* Additional right padding */
+        }
 
-            .icon-text {
-            font-size: 12px; /* Adjust font size as needed */
-            display: inline-block;
-            width: 15px;
-            text-align: center;
-            }
-    `}</style>
+        .icon {
+          width: 23px;
+          height: 23px;
+          margin-right: 8px; /* Space between icon and text */
+          stroke-width: 1.25; /* Ensure stroke width is consistent */
+          flex-shrink: 0; /* Prevents icon from shrinking */
+          transition: fill 0.2s; /* Smooth fill transition */
+        }
+
+        .icon-text {
+          font-size: 12px; /* Adjust font size as needed */
+          display: inline-block;
+          width: 15px;
+          text-align: center;
+        }
+      `}</style>
     </>
   );
-  };
+};
 export default PostComponent;
