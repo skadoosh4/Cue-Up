@@ -1,10 +1,9 @@
 "use client";
-import React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import Head from "next/head";
 import Linkify from 'react-linkify';
 
-//reading in data from backend
+// Reading in data from backend
 interface PostComponentProps {
     post_id: number;
     title: string;
@@ -13,21 +12,19 @@ interface PostComponentProps {
     like_count: number;
     created_at: string;
     user_id: number;
-  }
+}
 
-  // making the link in post clickable
-  const linkDecorator = (href: string, text: string, key: number): React.ReactNode => {
-    // Validate the URL
+// Making the link in post clickable
+const linkDecorator = (href: string, text: string, key: number): React.ReactNode => {
     if (!isValidUrl(href)) {
-      return <span key={key}>{text}</span>;  // Just return text if URL is invalid
+        return <span key={key}>{text}</span>;  // Just return text if URL is invalid
     }
-  
     return (
-      <a href={href} key={key} target="_blank" rel="noopener noreferrer" style={{ color: 'blue', textDecoration: 'underline' }}>
-        {text}
-      </a>
+        <a href={href} key={key} target="_blank" rel="noopener noreferrer" style={{ color: 'blue', textDecoration: 'underline' }}>
+            {text}
+        </a>
     );
-  };
+};
 
   // Simple URL validation function
   function isValidUrl(string: string): boolean {
@@ -53,27 +50,21 @@ interface PostComponentProps {
     const [likesCount, setLikesCount] = useState(like_count);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-    const handlePrevious = () => {
-      const newIndex =
-        currentImageIndex > 0 ? currentImageIndex - 1 : imageUrl.length - 1;
-      setCurrentImageIndex(newIndex);
-    };
-  
-    const handleNext = () => {
-      const newIndex =
-        currentImageIndex < imageUrl.length - 1 ? currentImageIndex + 1 : 0;
-      setCurrentImageIndex(newIndex);
-    };
-    
     const handleLike = () => {
-      if (!liked) {
-        setLikesCount(likesCount + 1);
-      } else {
-        setLikesCount(likesCount - 1);
-      }
       setLiked(!liked);
+      setLikesCount(liked ? likesCount - 1 : likesCount + 1);
     };
-  
+
+    const handleNextImage = () => {
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % imageUrl.length);
+    };
+
+    const handlePrevImage = () => {
+      setCurrentImageIndex((prevIndex) =>
+        prevIndex === 0 ? imageUrl.length - 1 : prevIndex - 1
+      );
+    };
+
     return (
     <>
         <Head>
@@ -94,8 +85,8 @@ interface PostComponentProps {
                     )}
                     {imageUrl.length > 1 && (
                         <div className='navigation'>
-                            <button className='nav-button' onClick={handlePrevious} aria-label='Previous Image'>&lt;</button>
-                            <button className='nav-button' onClick={handleNext} aria-label='Next Image'>&gt;</button>
+                            <button className='nav-button' onClick={handlePrevImage} aria-label='Previous Image'>&lt;</button>
+                            <button className='nav-button' onClick={handleNextImage} aria-label='Next Image'>&gt;</button>
                         </div>
                     )}
                     <span className='absolute top-4 right-4 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs'>
@@ -204,6 +195,7 @@ interface PostComponentProps {
             overflow: hidden;
             position: relative;
             background: rgba(0, 0, 0, 0.05);
+            height: 100%; /* Ensure it takes full height */
             }
 
             .image-container:hover .navigation {
@@ -270,6 +262,7 @@ interface PostComponentProps {
             color: black;
             overflow-y: auto;
             padding: 0px;
+            height: 100%; /* Ensure it takes full height */
             }
 
             .header{
